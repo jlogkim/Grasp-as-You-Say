@@ -226,36 +226,15 @@ class Trainer(object):
         current_model = build_model(model_cfg)
         logging.info(current_model)
         if self.resume:
-            if not self.cfg.model.use_score or self.cfg.model.score_pretrain:
-                # load checkpoint
-                trained_state_dict = self.checkpoint["model_state_dict"]
-                model_state_dict = current_model.state_dict()
-                # check state dict differences
-                different = Tester._check_state_dict(trained_state_dict, model_state_dict)
-                if different:
-                    input("State dict inconsistency detected. Press ENTER to continue or Ctrl-C to interrupt")
-                else:
-                    logging.info("checkpoint state dict is CONSISTENT with model state dict")
-                model_state_dict.update(trained_state_dict)
-                current_model.load_state_dict(model_state_dict)
-                logging.info(f"Loaded model weights from {self.checkpoint_path}")
-            else:
-                # 获取你的模型的状态字典
-                model_state_dict = current_model.state_dict()
-                # 获取预训练模型的状态字典
-                pretrained_state_dict = self.checkpoint["model_state_dict"]
-                # 构建一个新的状态字典，根据你的需求选择性地复制参数
-                new_state_dict = {}
-                for key, value in pretrained_state_dict.items():
-                    if 'score_heads' not in key:  # 如果不是属于 'score_heads' 部分的参数
-                        new_state_dict[key] = value
-                # 更新你的模型的状态字典
-                model_state_dict.update(new_state_dict)
-                # 加载新的状态字典到你的模型中
-                current_model.load_state_dict(model_state_dict)
-                logging.info(f"Loaded model weights from {self.checkpoint_path}")
-                logging.info(f"Ignore the weight of score_heads")
-
+            model_state_dict = current_model.state_dict()
+            pretrained_state_dict = self.checkpoint["model_state_dict"]
+            new_state_dict = {}
+            for key, value in pretrained_state_dict.items():
+                new_state_dict[key] = value
+            model_state_dict.update(new_state_dict)
+            current_model.load_state_dict(model_state_dict)
+            logging.info(f"Loaded model weights from {self.checkpoint_path}")
+            logging.info(f"Ignore the weight of score_heads")
         return current_model.to(self.device)
 
     def _build_dataloaders(self, data_cfg: EasyConfig) -> Tuple[DataLoader, DataLoader]:

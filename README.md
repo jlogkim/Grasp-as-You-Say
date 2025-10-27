@@ -35,6 +35,9 @@ pip install -e .
 cd ../../
 ```
 
+- Install other pakages for evaluation. (OPTIONAL)
+1. P-FID evaluation: [Point-E](https://github.com/openai/point-e)
+
 ## Data Preparation
 1. Download dexterous grap label and language label of DexGYS from here[https://huggingface.co/datasets/wyl2077/DexGYS], and put in the "dexgys" in the path of "./data".
 

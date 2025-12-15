@@ -11,7 +11,7 @@ class DDPM(nn.Module):
     def __init__(self, cfg) -> None:
         super(DDPM, self).__init__()
         
-        self.eps_model = build_decoder(cfg.decoder)
+        self.eps_model = build_decoder(cfg.decoder) # decoder model which use text guidance and object
         self.criterion = GraspLossPose(cfg.criterion)
         self.loss_weights = cfg.criterion.loss_weights
         self.timesteps = cfg.steps
@@ -185,7 +185,7 @@ class DDPM(nn.Module):
             The predict target `(pred_noise, pred_x0)`, currently we predict the noise, which is as same as DDPM
         """
         B, *x_shape = x_t.shape
-        if self.pred_x0:
+        if self.pred_x0: # True, We predict noise here.
             pred_x0 = self.eps_model(x_t, t, data)
             # pred_x0 = torch.clamp(pred_x0, -1, 1)
             pred_noise = (self.sqrt_recip_alphas_cumprod[t].reshape(B, *((1, ) * len(x_shape))) * x_t - pred_x0) \

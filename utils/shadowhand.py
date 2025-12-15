@@ -6,7 +6,7 @@ import pytorch3d.structures
 import pytorch_kinematics as pk
 import torch
 import trimesh
-from csdf import compute_sdf, index_vertices_by_faces
+from torchsdf import compute_sdf, index_vertices_by_faces
 
 
 class ShallowHandModel:
@@ -124,7 +124,7 @@ class ShallowHandModel:
                 x_local = x_local.reshape(-1, 3)  # (batch_size * num_samples, 3)
                 if 'geom_param' not in self.mesh[link_name]:
                     face_verts = self.mesh[link_name]['face_verts']
-                    dis_local, _, dis_signs, _, _ = compute_sdf(x_local, face_verts)
+                    dis_local, dis_signs, _, _ = compute_sdf(x_local, face_verts)
                     dis_local = dis_local * (-dis_signs)
                     if with_penetration:
                         penetration_local = dis_local

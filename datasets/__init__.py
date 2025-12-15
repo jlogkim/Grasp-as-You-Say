@@ -28,7 +28,7 @@ def build_datasets(data_cfg) -> Tuple[Dataset, Dataset, Optional[Dataset]]:
                         is_train=False,
             )
             test_set = None
-        elif hasattr(data_cfg, "test"):
+        elif hasattr(data_cfg, "test"): # For test only
             train_set = None
             val_set = None
             test_set = TaskDataset_Pose(

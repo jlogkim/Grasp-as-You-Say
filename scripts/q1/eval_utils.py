@@ -19,7 +19,7 @@ import numpy as np
 import pytorch3d.transforms as T
 import scipy.spatial
 import torch
-from csdf import compute_sdf, index_vertices_by_faces
+from torchsdf import compute_sdf, index_vertices_by_faces
 from torch.functional import Tensor
 from tqdm import tqdm, trange
 
@@ -94,7 +94,7 @@ class KaolinModel:
         closest_points = []
         for i in range(x.shape[0]):
             face_verts = self.object_face_verts_list[i]
-            dis, normal, dis_signs, _, _ = csdf.compute_sdf(x[i], face_verts)
+            dis, dis_signs, normal, _ = csdf.compute_sdf(x[i], face_verts)
             if with_closest_points:
                 closest_points.append(x[i] - dis.sqrt().unsqueeze(1) * normal)
             dis = torch.sqrt(dis+1e-8)
@@ -229,7 +229,7 @@ def cal_pen(hand_model, object_model, object_code, hand_pose, device):
         x_local = x_local.reshape(-1, 3)  # (total_batch_size * num_samples, 3)
         if "geom_param" not in hand_model.mesh[link_name]:
             face_verts = hand_model.mesh[link_name]["face_verts"]
-            dis_local, _, dis_signs, _, _ = compute_sdf(x_local, face_verts)
+            dis_local, dis_signs, _, _ = compute_sdf(x_local, face_verts)
             dis_local = torch.sqrt(dis_local + 1e-8)
             dis_local = dis_local * (-dis_signs)
         else:

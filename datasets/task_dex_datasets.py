@@ -147,17 +147,17 @@ class TaskDataset_Pose(DgnBase):
     ) -> None:
         super().__init__(rotation_type=rotation_type, norm_type=norm_type)
 
-        self.data_root = data_root
-        self.pose_path = pose_path
-        self.is_train = is_train
-        self.rotation_type = rotation_type
-        self.sample_in_pose = sample_in_pose
-        self.guidance_type = guidance_type
+        self.data_root = data_root # /data/oakink
+        self.pose_path = pose_path # demo.json
+        self.is_train = is_train # False
+        self.rotation_type = rotation_type # euler
+        self.sample_in_pose = sample_in_pose # False
+        self.guidance_type = guidance_type # fine
         self._process_data(sample_in_pose)
 
     def _process_data(self, sample_in_pose):
         # grasp 
-        with open(self.pose_path) as f:
+        with open(self.pose_path) as f: # read the json file.
             all_data = json.load(f)
         self.data = []
         if sample_in_pose:
@@ -174,6 +174,8 @@ class TaskDataset_Pose(DgnBase):
                     obj_dict[obj_code] = all_data[i]
                     obj_dict[obj_code]['dex_grasp'] = [obj_dict[obj_code]['dex_grasp']]
                     obj_dict[obj_code]['guidance'] = [obj_dict[obj_code]['guidance']]
+                if 'mesh_path' in all_data[i]:
+                    obj_dict[obj_code]['mesh_path'] = all_data[i]['mesh_path']
 
             for obj_code in obj_dict:
                 for i in range(len(obj_dict[obj_code]['guidance'])):
@@ -208,12 +210,17 @@ class TaskDataset_Pose(DgnBase):
 
         intend_id = torch.tensor([int(data["action_id"])])-1
         intend_vector = torch.zeros(4)
-        intend_vector[intend_id.item()] = 1
+        intend_vector[intend_id.item()] = 1 
         cls_vector = torch.zeros(len(self.ALL_CAT))
-        cls_vector[self.ALL_CAT_DCIT[cate_id]] = 1
-
+        if cate_id in self.ALL_CAT_DCIT:
+            cls_vector[self.ALL_CAT_DCIT[cate_id]] = 1
+        
         pose = torch.tensor(data["dex_grasp"])
-        obj_pc = self._get_obj_pc(obj_id)
+        if 'mesh_path' in data: # mesh_path
+            mesh_path = data['mesh_path']
+        else:
+            mesh_path = None
+        obj_pc = self._get_obj_pc(obj_id, mesh_path=mesh_path) # get object pointcloud
         if self.sample_in_pose:
             hand_translation = pose[:3]
             hand_axis_angle = pose[3:6]
@@ -238,9 +245,10 @@ class TaskDataset_Pose(DgnBase):
         sample = {
             "cate_id": cate_id,
             "guidance": guidance,
-            "cls_vector": cls_vector,
+            "cls_vector": cls_vector, # one hot vector
             "obj_pc": obj_pc,  # shape: (N, 3)
             "obj_id": obj_id,
+            "mesh_path": mesh_path,
             "intend_id": data["action_id"],
             "intend_vector": intend_vector,
             "norm_pose": norm_pose,  # shape: (trans(3) + pose(22) + specified_rotation(?))
@@ -251,25 +259,28 @@ class TaskDataset_Pose(DgnBase):
 
         return sample
 
-    def _get_obj_pc(self, oid, use_downsample=True, key="align"):
-        data_dir = osp.join(self.data_root, "shape")
-        obj_suffix_path = "align_ds" if use_downsample else "align"
-        if oid in self.real_meta:
-            obj_name = self.real_meta[oid]["name"]
-            obj_path = osp.join(data_dir, "OakInkObjectsV2")
+    def _get_obj_pc(self, oid, use_downsample=True, key="align", mesh_path=None):
+        if mesh_path is None:
+            data_dir = osp.join(self.data_root, "shape")
+            obj_suffix_path = "align_ds" if use_downsample else "align"
+            if oid in self.real_meta:
+                obj_name = self.real_meta[oid]["name"]
+                obj_path = osp.join(data_dir, "OakInkObjectsV2")
+            else:
+                obj_name = self.virtual_meta[oid]["name"]
+                obj_path = osp.join(data_dir, "OakInkVirtualObjectsV2")
+            obj_mesh_path = list(
+                glob.glob(osp.join(obj_path, obj_name, obj_suffix_path, "*.obj")) +
+                glob.glob(osp.join(obj_path, obj_name, obj_suffix_path, "*.ply")))
+            if len(obj_mesh_path) > 1:
+                obj_mesh_path = [p for p in obj_mesh_path if key in osp.split(p)[1]]
+            assert len(obj_mesh_path) == 1
+            obj_path = obj_mesh_path[0]
         else:
-            obj_name = self.virtual_meta[oid]["name"]
-            obj_path = osp.join(data_dir, "OakInkVirtualObjectsV2")
-        obj_mesh_path = list(
-            glob.glob(osp.join(obj_path, obj_name, obj_suffix_path, "*.obj")) +
-            glob.glob(osp.join(obj_path, obj_name, obj_suffix_path, "*.ply")))
-        if len(obj_mesh_path) > 1:
-            obj_mesh_path = [p for p in obj_mesh_path if key in osp.split(p)[1]]
-        assert len(obj_mesh_path) == 1
-        obj_path = obj_mesh_path[0]   
+            obj_path = mesh_path
         obj_trimesh = trimesh.load(obj_path, process=False, force="mesh", skip_materials=True)
         bbox_center = (obj_trimesh.vertices.min(0) + obj_trimesh.vertices.max(0)) / 2
-        obj_trimesh.vertices = obj_trimesh.vertices - bbox_center
+        obj_trimesh.vertices = obj_trimesh.vertices - bbox_center # center the object # how about scaling?
         obj_pc = torch.tensor(obj_trimesh.sample(4096)).float()
         return obj_pc   
     

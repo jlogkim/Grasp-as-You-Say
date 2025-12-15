@@ -186,18 +186,17 @@ class Trainer(object):
         else:
             raise NotImplementedError(f"No such optimizer: {optim_cfg.name}")
         if self.resume:
-            if not self.cfg.model.use_score or self.cfg.model.score_pretrain:
-                optim_state_dict = self.checkpoint["optimizer_state_dict"]
-                optimizer.load_state_dict(optim_state_dict)
+            # if not self.cfg.model.use_score or self.cfg.model.score_pretrain:
+            optim_state_dict = self.checkpoint["optimizer_state_dict"]
+            optimizer.load_state_dict(optim_state_dict)
         optimizer.zero_grad()
         return optimizer
 
     def _build_scheduler(self, sched_cfg: EasyConfig) -> optim.lr_scheduler._LRScheduler:
         if self.resume:
-            if not self.cfg.model.use_score or self.cfg.model.score_pretrain:
-                self.last_epoch = self.checkpoint["epoch"]
-            else:
-                self.last_epoch = -1
+            self.last_epoch = self.checkpoint["epoch"]
+            # else:
+            #     self.last_epoch = -1
         else:
             self.last_epoch = -1       
 

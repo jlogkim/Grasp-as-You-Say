@@ -96,7 +96,7 @@ class UNetModel(nn.Module):
             the denoised target data, i.e., $x_{t-1}$
         """
 
-        if self.trans_condition_type == "txt_obj":
+        if self.trans_condition_type == "txt_obj": # For IDGC
             cond = torch.cat([data["cond_obj"], data["cond_txt"]], dim=1)
             atten_mask = None 
         elif self.trans_condition_type == "obj_hand":

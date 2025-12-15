@@ -173,8 +173,13 @@ class RefineDataset(DgnBase):
         cate_id = data["cate_id"]
         obj_id = data["obj_id"]
         guidance = data["guidance"]
+
+        if 'mesh_path' in data:
+            mesh_path = data['mesh_path']
+        else:
+            mesh_path = None
         
-        obj_pc = self._get_obj_pc(obj_id)
+        obj_pc = self._get_obj_pc(obj_id, mesh_path=mesh_path)
 
         def _norm(pose):
             hand_translation = pose[:3]
@@ -210,26 +215,30 @@ class RefineDataset(DgnBase):
             "norm_pose": fine_norm_pose,  
             "hand_model_pose": fine_pose,  
             "rotation_type": self.rotation_type,
+            "mesh_path": mesh_path,
         }
 
         return sample
 
-    def _get_obj_pc(self, oid, use_downsample=True, key="align"):
-        data_dir = osp.join(self.data_root, "shape")
-        obj_suffix_path = "align_ds" if use_downsample else "align"
-        if oid in self.real_meta:
-            obj_name = self.real_meta[oid]["name"]
-            obj_path = osp.join(data_dir, "OakInkObjectsV2")
+    def _get_obj_pc(self, oid, use_downsample=True, key="align", mesh_path=None):
+        if mesh_path is None:
+            data_dir = osp.join(self.data_root, "shape")
+            obj_suffix_path = "align_ds" if use_downsample else "align"
+            if oid in self.real_meta:
+                obj_name = self.real_meta[oid]["name"]
+                obj_path = osp.join(data_dir, "OakInkObjectsV2")
+            else:
+                obj_name = self.virtual_meta[oid]["name"]
+                obj_path = osp.join(data_dir, "OakInkVirtualObjectsV2")
+            obj_mesh_path = list(
+                glob.glob(osp.join(obj_path, obj_name, obj_suffix_path, "*.obj")) +
+                glob.glob(osp.join(obj_path, obj_name, obj_suffix_path, "*.ply")))
+            if len(obj_mesh_path) > 1:
+                obj_mesh_path = [p for p in obj_mesh_path if key in osp.split(p)[1]]
+            assert len(obj_mesh_path) == 1
+            obj_path = obj_mesh_path[0]
         else:
-            obj_name = self.virtual_meta[oid]["name"]
-            obj_path = osp.join(data_dir, "OakInkVirtualObjectsV2")
-        obj_mesh_path = list(
-            glob.glob(osp.join(obj_path, obj_name, obj_suffix_path, "*.obj")) +
-            glob.glob(osp.join(obj_path, obj_name, obj_suffix_path, "*.ply")))
-        if len(obj_mesh_path) > 1:
-            obj_mesh_path = [p for p in obj_mesh_path if key in osp.split(p)[1]]
-        assert len(obj_mesh_path) == 1
-        obj_path = obj_mesh_path[0]   
+            obj_path = mesh_path
         obj_trimesh = trimesh.load(obj_path, process=False, force="mesh", skip_materials=True)
         bbox_center = (obj_trimesh.vertices.min(0) + obj_trimesh.vertices.max(0)) / 2
         obj_trimesh.vertices = obj_trimesh.vertices - bbox_center

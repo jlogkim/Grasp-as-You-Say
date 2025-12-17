@@ -5,7 +5,7 @@ import numpy as np
 import math, copy
 
 
-dummpy_grasp = [
+dummy_grasp = [
             0.1368691772222519,
             -0.021919019520282745,
             -0.02601059153676033,
@@ -65,8 +65,8 @@ for polar in range(0, 180, 30):
         )
 
         dict_item = copy.deepcopy(base_dict)
-        dict_item['dex_grasp'] = dummpy_grasp
+        dict_item['dex_grasp'] = dummy_grasp
         dict_item['guidance'] = guidance
         demo_data_list.append(dict_item)
 
-json.dump(demo_data_list, open('/home/jisoo/data2/Dexterous_Grasp/Grasp-as-You-Say/demo/demo_w_specific_condition.json','w'), indent=4)
+json.dump(demo_data_list, open('/home/jisoo/data2/Dexterous_Grasp/Grasp_as_You_Say/demo/demo_w_specific_condition.json','w'), indent=4)

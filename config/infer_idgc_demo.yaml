@@ -2,7 +2,7 @@ set: "test"
 data:
   test:
     data_root: "./data/oakink"
-    pose_path: "./demo/demo_w_specific_condition.json"
+    pose_path: "/home/jisoo/data2/Dexterous_Grasp/data/demo_data.json"
     num_rotation_aug: 1
     num_equivalent_aug: 1
     sample_in_pose: False

@@ -26,6 +26,9 @@ from datasets import build_datasets
 from model import build_model
 from utils.config_utils import EasyConfig
 
+from demo_module.demo_config import idgc_model_path, qgc_model_path, \
+            idgc_train_cfg_path, idgc_demo_cfg_path, qgc_train_cfg_path, qgc_demo_cfg_path
+
 
 def setup_seed(seed):
     torch.manual_seed(seed)
@@ -157,7 +160,7 @@ class Demo_Tester(object):
         if difference["checkpoint_only"]:
             different = True
             logging.warning(f"These keys ONLY exist in current model state dict:")
-            for key in difference["create_model_only"]:
+            for key in difference["created_model_only"]:
                 logging.warning(key)
         return different
 
@@ -269,10 +272,8 @@ def load_cfg():
         config loading priority:
             train_cfg < test_cfg < other argparse arguments
         """
-        # original format
-        args = parse_args()
+        # Initialize with train cfg
         test_cfg = EasyConfig()
-        # train cfg
         test_cfg.load(train_cfg_path)
         # test cfg
         new_cfg = EasyConfig()
@@ -286,12 +287,12 @@ def load_cfg():
         train_cfg_path=args.idgc_train_cfg,
         test_cfg_path=args.idgc_test_cfg)
     idgc_test_cfg.model.checkpoint_path = args.idgc_checkpoint
-    idgc_test_cfg.save_root = "./Experiments/demo_orientation"
+    idgc_test_cfg.save_root = args.save_root
     qgc_test_cfg = combine_cfg(
         train_cfg_path=args.qgc_train_cfg,
         test_cfg_path=args.qgc_test_cfg)
     qgc_test_cfg.model.checkpoint_path = args.qgc_checkpoint
-    qgc_test_cfg.save_root = "./Experiments/demo_orientation"
+    qgc_test_cfg.save_root = args.save_root
 
     # def _load_argparse_cfg(args_dict: Dict[str, Any]):
     #     output = {}
@@ -320,14 +321,17 @@ def load_cfg():
 def parse_args(arg_str: Optional[str] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
 
-    # test cfgs
-    parser.add_argument("--idgc_train_cfg", type=str, default='./config/idgc.yaml', help="idgc train config file")
-    parser.add_argument("--idgc_test_cfg", type=str, default='./config/infer_idgc_demo.yaml', help="idgc test config file")
-    parser.add_argument("--idgc_checkpoint", type=str, required=True)
+    # idgc config
+    parser.add_argument("--idgc_train_cfg", type=str, default=idgc_train_cfg_path, help="idgc train config file")
+    parser.add_argument("--idgc_test_cfg", type=str, default=idgc_demo_cfg_path, help="idgc test config file")
+    parser.add_argument("--idgc_checkpoint", type=str, default=idgc_model_path)
 
-    parser.add_argument("--qgc_train_cfg", type=str, default='./config/qgc.yaml', help="qgc train config file")
-    parser.add_argument("--qgc_test_cfg", type=str, default='./config/infer_qgc_demo.yaml', help="qgc test config file")
-    parser.add_argument("--qgc_checkpoint", type=str, required=True)
+    parser.add_argument("--qgc_train_cfg", type=str, default=qgc_train_cfg_path, help="qgc train config file")
+    parser.add_argument("--qgc_test_cfg", type=str, default=qgc_demo_cfg_path, help="qgc test config file")
+    parser.add_argument("--qgc_checkpoint", type=str, default=qgc_model_path)
+
+    parser.add_argument("--save_root", type=str, \
+        default="/home/jisoo/data2/Dexterous_Grasp/data/Experiments/demo_orientation")
 
     parser.add_argument(
         "--override", nargs="*", default=[],
@@ -342,8 +346,8 @@ def parse_args(arg_str: Optional[str] = None) -> argparse.Namespace:
 if __name__ == "__main__":
     
     idgc_test_cfg, qgc_test_cfg = load_cfg()
-    tester = Demo_Tester(idgc_test_cfg)
-    tester.test()
+    # tester = Demo_Tester(idgc_test_cfg)
+    # tester.test()
     
     tester = Demo_Tester(qgc_test_cfg)
     tester.test()

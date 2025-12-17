@@ -22,11 +22,12 @@ class Hand_Config:
 
 class Object_mesh:
     def __init__(self) -> None:
-        data_root_path = "/home/jisoo/data2/Dexterous_Grasp/Grasp-as-You-Say/data/oakink"
+        data_root_path = "/home/jisoo/data2/Dexterous_Grasp/Grasp_as_You_Say/data/oakink"
         self.data_dir = os.path.join(data_root_path, "shape")
         oi_shape_dir = os.path.join(self.data_dir, "oakink_shape_v2")
         meta_dir = os.path.join(self.data_dir, "metaV2")
         self.obj_suffix_path = "align"
+
         self.real_meta = json.load(open(os.path.join(meta_dir, "object_id.json"), "r"))
         self.virtual_meta = json.load(open(os.path.join(meta_dir, "virtual_object_id.json"), "r"))
 
@@ -62,7 +63,7 @@ if __name__ == "__main__":
     hand_config = Hand_Config()
     hand_model = HandModel(hand_config, "cpu")
 
-    with open("/home/jisoo/data2/Dexterous_Grasp/Grasp-as-You-Say/Experiments/demo/test_results/epoch_100_demo/matched_results.json") as f:
+    with open("/home/jisoo/data2/Dexterous_Grasp/data/Experiments/demo_orientation/test_results/epoch_100_demo/matched_results.json") as f:
         data_list = json.load(f)
 
     save_root = os.path.join("./Experiments/vis_mesh", "pred_result_before_refine")
